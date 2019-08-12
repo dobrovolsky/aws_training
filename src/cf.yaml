@@ -1,0 +1,46 @@
+Resources:
+  LambdaExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - S3:DeleteObject
+                Effect: Allow
+                Resource: arn:aws:s3:::*
+            Version: '2012-10-17'
+          PolicyName: S3Policy
+    Type: AWS::IAM::Role
+  LambdaProcessing:
+    Properties:
+      Code:
+        ZipFile: print("hello world!!!!!!!!")
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt 'LambdaExecutionRole.Arn'
+      Runtime: python3.7
+    Type: AWS::Lambda::Function
+  UploadedResources:
+    DependsOn:
+      - LambdaProcessing
+    Properties:
+      BucketName: uploaded-file-processing-ee5a4c2a-b5a7-4b80-ac22-5763e7a93552
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt 'LambdaProcessing.Arn'
+      VersioningConfiguration:
+        Status: Enabled
+    Type: AWS::S3::Bucket
+
