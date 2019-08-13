@@ -3,16 +3,35 @@ from troposphere import (
     Ref,
     iam,
     awslambda,
+    Parameter,
 )
 
-from cf.db import (
+from cloud_formation.db import (
     db,
     db_name,
     db_password,
     db_user,
     dynamo_db,
 )
-from cf.sns import sns_topic
+from cloud_formation.sns import sns_topic
+
+source_code_bucket = Parameter(
+    "SourceCodeBucket",
+    Description="Bucket with source code",
+    Type="String",
+)
+
+zip_file_path = Parameter(
+    "ZipFilePath",
+    Description="Bucket with source code",
+    Type="String",
+)
+
+lambda_name = Parameter(
+    "LambdaName",
+    Description="Bucket with source code",
+    Type="String",
+)
 
 # ============================================================================
 # Lambda Function
@@ -22,9 +41,10 @@ lambda_processing = awslambda.Function(
     Handler='lambda_function.lambda_handler',
     Role=GetAtt("LambdaExecutionRole", "Arn"),
     Runtime='python3.7',
+    FunctionName=Ref(lambda_name),
     Code=awslambda.Code(
-        S3Bucket='cf-templates-f5lkgopzuq9c-eu-central-1',
-        S3Key='lambda.zip'
+        S3Bucket=Ref(source_code_bucket),
+        S3Key=Ref(zip_file_path)
     ),
     Environment=awslambda.Environment(
         Variables={

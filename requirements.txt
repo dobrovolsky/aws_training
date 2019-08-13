@@ -2,3 +2,4 @@ awscli==1.16.215
 troposphere==2.5.0
 boto3==1.9.205
 pg8000==1.13.2
+sceptre==2.1.5

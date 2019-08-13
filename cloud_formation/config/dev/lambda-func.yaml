@@ -1,0 +1,8 @@
+template_path: lambda-func.json
+parameters:
+  DBName: postgres
+  DBPassword: postgres
+  DBUser: postgres
+  SourceCodeBucket: cf-templates-f5lkgopzuq9c-eu-central-1
+  ZipFilePath: dev_lambda.zip
+  LambdaName: LambdaProcessingDEV

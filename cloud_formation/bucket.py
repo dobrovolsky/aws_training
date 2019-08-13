@@ -3,7 +3,7 @@ from troposphere import (
     s3,
 )
 
-from cf.aws_lambda import lambda_processing
+from cloud_formation.aws_lambda import lambda_processing
 
 bucket = s3.Bucket(
     'UploadedResources',

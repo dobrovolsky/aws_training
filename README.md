@@ -9,3 +9,13 @@
 - For all operations with AWS from within lambda use boto3 python library.
 - Create all the infrastructure through Cloudformation. Use troposphere python library as a wrapper for Cloudformation.
 - Use sceptre python library to store variables from troposphere. There should be 2 separate configs for dev and qa envs. 
+
+## How to run?
+assume you have user's permissions for RDS, IAM, DynamoDB, VPCFullAccess, SNS, CloudFormation, Lambda and bucket with zip file.
+1) `cd cloud_formation`
+2) `sceptre create dev/lambda-func.yaml` 
+
+TODO: update building
+For updating dev or qa environment use `update_dev.sh` or `update_qa.sh`
+For getting zip use `generate_zip.sh`
+For updating CloudFormation template use `cd cloud_formation && python cloudformation_generator.py `
