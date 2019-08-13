@@ -1,93 +1,24 @@
-from troposphere import (
-    Template,
-    GetAtt,
-)
+from troposphere import Template
 
-from troposphere import (
-    s3,
-    rds,
-    awslambda,
-)
-from troposphere.iam import (
-    Role,
-    Policy,
-)
+from cf import aws_lambda
+from cf import bucket
+from cf import db
+from cf import sns
 
 t = Template()
 
-# db = t.add_resource(
-#     rds.DBInstance(
-#         'Postgres',
-#         DBInstanceClass='db.t2.micro',
-#         Engine='postgres',
-#         MasterUsername='postgres',
-#         MasterUserPassword='postgres',
-#         AllocatedStorage="5",
-#         DBName="Postgres",
-#     ))
 
-lambda_func = t.add_resource(awslambda.Function(
-    'LambdaProcessing',
-    Handler='lambda_function.lambda_handler',
-    Role=GetAtt("LambdaExecutionRole", "Arn"),
-    Runtime='python3.7',
-    Code=awslambda.Code(
-        ZipFile='print("hello world!!!!!!!!")'
-        # S3Bucket='code-4ed9328a-1818-4984-8534-c1a214428dc4',
-        # S3Key='code.zip'
-    ),
-))
+t.add_resource(aws_lambda.lambda_processing)
+t.add_resource(aws_lambda.s3_lambda_permission)
+t.add_resource(aws_lambda.lambda_execution_role)
 
-t.add_resource(
-    s3.Bucket(
-        'UploadedResources',
-        BucketName='uploaded-file-processing-ee5a4c2a-b5a7-4b80-ac22-5763e7a93552',
-        VersioningConfiguration=s3.VersioningConfiguration(
-            Status='Enabled',
-        ),
-        DependsOn=['LambdaProcessing',],
-        NotificationConfiguration=s3.NotificationConfiguration(
-            LambdaConfigurations=[
-                s3.LambdaConfigurations(
-                    Event='s3:ObjectCreated:*',
-                    Function=GetAtt(lambda_func, 'Arn')
-                )
-            ]
-        )
-    )
-)
+t.add_resource(bucket.bucket)
 
-# t.add_resource(
-#     s3.Bucket(
-#         'CodeStorage',
-#         BucketName='code-4ed9328a-1818-4984-8534-c1a214428dc4',
-#     )
-# )
+t.add_resource(db.db)
+t.add_resource(db.dynamo_db)
 
-LambdaExecutionRole = t.add_resource(Role(
-    "LambdaExecutionRole",
-    Path="/",
-    Policies=[Policy(
-        PolicyName="S3Policy",
-        PolicyDocument={
-            "Version": "2012-10-17",
-            "Statement": [{
-                "Action": ["s3:GetObject", 's3:PutObject', 'S3:DeleteObject'],
-                "Resource": "arn:aws:s3:::*",
-                "Effect": "Allow"
-            }]
-        })],
-    AssumeRolePolicyDocument={
-        "Version": "2012-10-17",
-        "Statement": [{
-            "Action": ["sts:AssumeRole"],
-            "Effect": "Allow",
-            "Principal": {
-                "Service": ["lambda.amazonaws.com"]
-            }
-        }]
-    },
-))
+t.add_resource(sns.sns_topic)
+t.add_resource(sns.subscription)
 
 with open('cf.yaml', 'w+') as f:
     print(t.to_yaml(), file=f)
