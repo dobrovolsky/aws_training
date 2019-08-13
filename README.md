@@ -1,4 +1,4 @@
-#AWS Task:
+# AWS Task:
 1. Create S3 bucket (enable versioning)
 2. Create RDS database.
 3. Create lambda function to process some info from a text file in bucket when new version of the file is uploaded (S3 event to invoke lambda) and put the info it into RDS table.
