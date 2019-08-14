@@ -15,7 +15,7 @@ assume you have user's permissions for RDS, IAM, DynamoDB, VPCFullAccess, SNS, C
 1) `cd cloud_formation`
 2) `sceptre create dev/lambda-func.yaml` 
 
-TODO: update building
-For updating dev or qa environment use `update_dev.sh` or `update_qa.sh`
-For getting zip use `generate_zip.sh`
-For updating CloudFormation template use `cd cloud_formation && python cloudformation_generator.py `
+For generation zip files, load code or update lambda use `python publisher.py env action`
+arguments:
+- env: `dev` or `qa`
+- action: `generate`, `upload`, `deploy`

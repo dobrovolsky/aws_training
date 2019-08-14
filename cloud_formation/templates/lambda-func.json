@@ -1,0 +1,244 @@
+{
+    "Parameters": {
+        "DBName": {
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "ConstraintDescription": "must contain only alphanumeric characters.",
+            "Description": "The database name",
+            "MaxLength": "41",
+            "MinLength": "1",
+            "Type": "String"
+        },
+        "DBPassword": {
+            "AllowedPattern": "[a-zA-Z0-9]*",
+            "ConstraintDescription": "must contain only alphanumeric characters.",
+            "Description": "The database admin account password",
+            "MaxLength": "41",
+            "MinLength": "1",
+            "NoEcho": true,
+            "Type": "String"
+        },
+        "DBUser": {
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters.",
+            "Description": "The database admin account username",
+            "MaxLength": "16",
+            "MinLength": "1",
+            "Type": "String"
+        },
+        "LambdaName": {
+            "Description": "Bucket with source code",
+            "Type": "String"
+        },
+        "SourceCodeBucket": {
+            "Description": "Bucket with source code",
+            "Type": "String"
+        },
+        "ZipFilePath": {
+            "Description": "Bucket with source code",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "DynamoDBLog": {
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "request_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "request_id",
+                        "KeyType": "HASH"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5
+                },
+                "TableName": "DynamoDBLog"
+            },
+            "Type": "AWS::DynamoDB::Table"
+        },
+        "LambdaExecutionRole": {
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "Path": "/",
+                "Policies": [
+                    {
+                        "PolicyDocument": {
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:PutObject",
+                                        "S3:DeleteObject"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "arn:aws:s3:::*"
+                                },
+                                {
+                                    "Action": [
+                                        "sns:Publish"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "arn:aws:sns:*:*:*"
+                                },
+                                {
+                                    "Action": [
+                                        "dynamodb:DeleteItem",
+                                        "dynamodb:GetItem",
+                                        "dynamodb:PutItem",
+                                        "dynamodb:Scan",
+                                        "dynamodb:UpdateItem"
+                                    ],
+                                    "Effect": "Allow",
+                                    "Resource": "arn:aws:dynamodb:eu-central-1:954489397717:table/*"
+                                }
+                            ],
+                            "Version": "2012-10-17"
+                        },
+                        "PolicyName": "S3Policy"
+                    }
+                ]
+            },
+            "Type": "AWS::IAM::Role"
+        },
+        "LambdaProcessing": {
+            "Properties": {
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "SourceCodeBucket"
+                    },
+                    "S3Key": {
+                        "Ref": "ZipFilePath"
+                    }
+                },
+                "Environment": {
+                    "Variables": {
+                        "DB_HOST": {
+                            "Fn::GetAtt": [
+                                "Postgres",
+                                "Endpoint.Address"
+                            ]
+                        },
+                        "DB_NAME": {
+                            "Ref": "DBName"
+                        },
+                        "DB_PASSWORD": {
+                            "Ref": "DBPassword"
+                        },
+                        "DB_PORT": {
+                            "Fn::GetAtt": [
+                                "Postgres",
+                                "Endpoint.Port"
+                            ]
+                        },
+                        "DB_USERNAME": {
+                            "Ref": "DBUser"
+                        },
+                        "DYNAMODB_TABLE": {
+                            "Ref": "DynamoDBLog"
+                        },
+                        "SNS_TOPIC": {
+                            "Ref": "SNSTopic"
+                        }
+                    }
+                },
+                "FunctionName": {
+                    "Ref": "LambdaName"
+                },
+                "Handler": "lambda_function.lambda_handler",
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LambdaExecutionRole",
+                        "Arn"
+                    ]
+                },
+                "Runtime": "python3.7"
+            },
+            "Type": "AWS::Lambda::Function"
+        },
+        "Postgres": {
+            "Properties": {
+                "AllocatedStorage": "5",
+                "DBInstanceClass": "db.t2.micro",
+                "DBName": {
+                    "Ref": "DBName"
+                },
+                "Engine": "postgres",
+                "MasterUserPassword": {
+                    "Ref": "DBPassword"
+                },
+                "MasterUsername": {
+                    "Ref": "DBUser"
+                }
+            },
+            "Type": "AWS::RDS::DBInstance"
+        },
+        "S3LambdaPermission": {
+            "Properties": {
+                "Action": "lambda:invokeFunction",
+                "FunctionName": {
+                    "Ref": "LambdaProcessing"
+                },
+                "Principal": "s3.amazonaws.com"
+            },
+            "Type": "AWS::Lambda::Permission"
+        },
+        "SNSTopic": {
+            "Type": "AWS::SNS::Topic"
+        },
+        "SNSTopicSubscription": {
+            "Properties": {
+                "Endpoint": "bogdan.gm24@gmail.com",
+                "Protocol": "email",
+                "TopicArn": {
+                    "Ref": "SNSTopic"
+                }
+            },
+            "Type": "AWS::SNS::Subscription"
+        },
+        "UploadedResources": {
+            "DependsOn": [
+                "LambdaProcessing"
+            ],
+            "Properties": {
+                "BucketName": "uploaded-file-processing-ee5a4c2a-b5a7-4b80-ac22-5763e7a93552",
+                "NotificationConfiguration": {
+                    "LambdaConfigurations": [
+                        {
+                            "Event": "s3:ObjectCreated:*",
+                            "Function": {
+                                "Fn::GetAtt": [
+                                    "LambdaProcessing",
+                                    "Arn"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "VersioningConfiguration": {
+                    "Status": "Enabled"
+                }
+            },
+            "Type": "AWS::S3::Bucket"
+        }
+    }
+}
