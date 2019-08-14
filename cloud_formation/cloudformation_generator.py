@@ -1,9 +1,9 @@
 from troposphere import Template
 
-from cloud_formation import aws_lambda
-from cloud_formation import bucket
-from cloud_formation import db
-from cloud_formation import sns
+import aws_lambda
+import bucket
+import db
+import sns
 
 t = Template()
 

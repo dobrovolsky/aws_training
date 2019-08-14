@@ -6,14 +6,14 @@ from troposphere import (
     Parameter,
 )
 
-from cloud_formation.db import (
+from db import (
     db,
     db_name,
     db_password,
     db_user,
     dynamo_db,
 )
-from cloud_formation.sns import sns_topic
+from sns import sns_topic
 
 source_code_bucket = Parameter(
     "SourceCodeBucket",

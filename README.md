@@ -13,6 +13,7 @@
 ## How to run?
 assume you have user's permissions for RDS, IAM, DynamoDB, VPCFullAccess, SNS, CloudFormation, Lambda and bucket with zip file.
 1) `cd cloud_formation`
+2) `python cloudformation_generator.py`
 2) `sceptre create dev/lambda-func.yaml` 
 
 For generation zip files, load code or update lambda use `python publisher.py env action`
